@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c3aed">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Loto 6/38">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Generador de Combinaciones - Lotería 6/38</title>
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #f5f3ff;
+    --card-bg: #ffffff;
+    --text: #1e1b2e;
+    --text-soft: #6b6580;
+    --accent: #7c3aed;
+    --accent-soft: #ede9fe;
+    --border: #e4e0f5;
+    --danger: #dc2626;
+    --success: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16121f;
+      --card-bg: #211b30;
+      --text: #f1eefc;
+      --text-soft: #a79fc2;
+      --accent: #a78bfa;
+      --accent-soft: #2f2547;
+      --border: #352b4a;
+      --danger: #f87171;
+      --success: #4ade80;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16121f;
+    --card-bg: #211b30;
+    --text: #f1eefc;
+    --text-soft: #a79fc2;
+    --accent: #a78bfa;
+    --accent-soft: #2f2547;
+    --border: #352b4a;
+    --danger: #f87171;
+    --success: #4ade80;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100%;
+    padding: 24px 16px 48px;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .sub { color: var(--text-soft); font-size: 0.9rem; margin: 0 0 24px; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 14px; }
+
+  .balls-result {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    min-height: 56px;
+    align-items: center;
+  }
+  .ball {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+  }
+  .placeholder { color: var(--text-soft); font-size: 0.9rem; }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    width: 100%;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 16px;
+  }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+
+  .picker {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .pick {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .pick.sel {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .picker-note { font-size: 0.82rem; color: var(--text-soft); margin: 0 0 10px; }
+
+  .btn-add {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    width: 100%;
+  }
+  .btn-add:disabled { opacity: 0.5; cursor: default; }
+
+  .history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.9rem;
+  }
+  .history-nums { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mini-ball {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .del-btn {
+    background: none;
+    color: var(--danger);
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+  .empty-note { color: var(--text-soft); font-size: 0.85rem; text-align: center; padding: 10px 0; }
+  .status { font-size: 0.85rem; margin-top: 10px; min-height: 18px; text-align: center; }
+  .status.err { color: var(--danger); }
+  .status.ok { color: var(--success); }
+  .count-badge {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 6px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .stat-box {
+    background: var(--accent-soft);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .stat-box.wide { grid-column: 1 / -1; }
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+  .stat-value.small { font-size: 1rem; }
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--text-soft);
+    margin-top: 4px;
+  }
+  .stat-nums {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .combo-row {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .combo-row:last-child { border-bottom: none; }
+  .save-fab {
+    position: fixed;
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    right: 16px;
+    z-index: 50;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 999px;
+    width: 46px;
+    height: 46px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  }
+  .save-fab:active { opacity: 0.85; }
+  .save-fab:disabled { opacity: 0.5; }
+  .save-toast {
+    position: fixed;
+    top: calc(70px + env(safe-area-inset-top, 0px));
+    right: 16px;
+    z-index: 50;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    max-width: 220px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+</style>
+</head>
+<body>
+<button class="save-fab" id="saveFab" title="Guardar resultados">💾</button>
+<div class="wrap">
+  <h1>🎰 Generador — Lotería 6/38</h1>
+  <p class="sub">Genera combinaciones de 6 números (1–38) que nunca coincidan con las que ya salieron.</p>
+
+  <div class="card dark-card">
+    <h2>Generador de combinaciones</h2>
+    <button class="btn-primary" id="generateAllBtn">🎲 Generar las 6 combinaciones</button>
+    <div class="status" id="genStatus"></div>
+  </div>
+
+  <div class="card dark-card">
+    <h2>Combinaciones generadas</h2>
+    <div id="extraGenerators"></div>
+  </div>
+
+  <div class="card">
+    <h2>Agregar combinación ya salida <span class="count-badge" id="histCount">0</span></h2>
+    <p class="picker-note">Toca 6 números para registrar un sorteo anterior.</p>
+    <div class="picker" id="picker"></div>
+    <button class="btn-add" id="addBtn" disabled>Agregar a historial (0/6)</button>
+    <div class="status" id="addStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Historial de sorteos</h2>
+    <ul class="history-list" id="historyList"></ul>
+    <p class="empty-note" id="emptyNote">Aún no has agregado ninguna combinación.</p>
+    <button class="btn-add" id="saveHistoryBtn" style="margin-top:12px;">💾 Guardar historial</button>
+    <div class="status" id="saveHistoryStatus"></div>
+  </div>
+</div>
+
+<script>
+const MIN = 1, MAX = 38, PICK = 6;
+let history = [];
+let selected = [];
+
+const SEED_HISTORY = [
+  [7, 14, 24, 25, 35, 36],   // sorteo 6 jun 2026
+  [2, 3, 8, 10, 13, 19],     // sorteo 3 may 2026
+  [4, 13, 15, 23, 26, 29],   // sorteo 18 ene 2026
+  [10, 15, 21, 23, 30, 35],  // sorteo 5 jul 2025
+  [1, 2, 11, 12, 30, 36],    // sorteo 9 jul 2025
+  [2, 14, 28, 29, 31, 33],   // sorteo 8 abr 2026
+  [2, 7, 14, 24, 32, 35],    // sorteo 18 abr 2026
+  [2, 8, 9, 19, 21, 27]      // sorteo 10 sep 2025
+];
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem('loto638_history');
+    history = raw ? JSON.parse(raw) : [];
+  } catch (e) { history = []; }
+
+  const alreadySeeded = localStorage.getItem('loto638_seeded') === '1';
+  if (!alreadySeeded) {
+    const existingKeys = new Set(history.map(comboKey));
+    SEED_HISTORY.forEach(c => {
+      const sorted = [...c].sort((a,b) => a-b);
+      if (!existingKeys.has(comboKey(sorted))) {
+        history.push(sorted);
+        existingKeys.add(comboKey(sorted));
+      }
+    });
+    saveHistory();
+    try { localStorage.setItem('loto638_seeded', '1'); } catch (e) {}
+  }
+}
+function saveHistory() {
+  try { localStorage.setItem('loto638_history', JSON.stringify(history)); }
+  catch (e) { /* storage unavailable, continue in-memory */ }
+}
+
+function buildPicker() {
+  const picker = document.getElementById('picker');
+  picker.innerHTML = '';
+  for (let n = MIN; n <= MAX; n++) {
+    const b = document.createElement('button');
+    b.className = 'pick';
+    b.textContent = n;
+    b.type = 'button';
+    b.addEventListener('click', () => togglePick(n, b));
+    picker.appendChild(b);
+  }
+}
+
+function togglePick(n, el) {
+  const idx = selected.indexOf(n);
+  if (idx >= 0) {
+    selected.splice(idx, 1);
+    el.classList.remove('sel');
+  } else {
+    if (selected.length >= PICK) return;
+    selected.push(n);
+    el.classList.add('sel');
+  }
+  const addBtn = document.getElementById('addBtn');
+  addBtn.textContent = `Agregar a historial (${selected.length}/${PICK})`;
+  addBtn.disabled = selected.length !== PICK;
+}
+
+function comboKey(arr) {
+  return [...arr].sort((a,b) => a-b).join('-');
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const empty = document.getElementById('emptyNote');
+  document.getElementById('histCount').textContent = history.length;
+  list.innerHTML = '';
+  if (history.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  history.slice().reverse().forEach((combo) => {
+    const realIndex = history.indexOf(combo);
+    const li = document.createElement('li');
+    li.className = 'history-item';
+    const numsDiv = document.createElement('div');
+    numsDiv.className = 'history-nums';
+    combo.forEach(n => {
+      const mb = document.createElement('span');
+      mb.className = 'mini-ball';
+      mb.textContent = n;
+      numsDiv.appendChild(mb);
+    });
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.textContent = 'Eliminar';
+    delBtn.addEventListener('click', () => {
+      history.splice(realIndex, 1);
+      saveHistory();
+      renderHistory();
+    });
+    li.appendChild(numsDiv);
+    li.appendChild(delBtn);
+    list.appendChild(li);
+  });
+}
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  const status = document.getElementById('addStatus');
+  if (selected.length !== PICK) return;
+  const key = comboKey(selected);
+  const exists = history.some(c => comboKey(c) === key);
+  if (exists) {
+    status.textContent = 'Esa combinación ya está en el historial.';
+    status.className = 'status err';
+    return;
+  }
+  history.push([...selected].sort((a,b) => a-b));
+  saveHistory();
+  renderHistory();
+  status.textContent = 'Combinación agregada al historial.';
+  status.className = 'status ok';
+  selected = [];
+  buildPicker();
+  const addBtn = document.getElementById('addBtn');
+  addBtn.textContent = `Agregar a historial (0/6)`;
+  addBtn.disabled = true;
+  setTimeout(() => { status.textContent = ''; }, 2500);
+});
+
+function randomCombo() {
+  const nums = [];
+  while (nums.length < PICK) {
+    const n = Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+    if (!nums.includes(n)) nums.push(n);
+  }
+  return nums.sort((a,b) => a-b);
+}
+
+function choose(n, k) {
+  let res = 1;
+  for (let i = 0; i < k; i++) res = res * (n - i) / (i + 1);
+  return Math.round(res);
+}
+
+const TOTAL_BOXES = 6;
+const generatedCombos = {};
+
+function buildGeneratorCards() {
+  const container = document.getElementById('extraGenerators');
+  container.innerHTML = '';
+  for (let i = 1; i <= TOTAL_BOXES; i++) {
+    const row = document.createElement('div');
+    row.className = 'combo-row';
+    row.innerHTML = `
+      <div class="balls-result" id="resultBalls-${i}">
+        <span class="placeholder">Presiona "Generar"</span>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function generateOneCombo(boxId, historySet, otherGenerated) {
+  let combo, key, tries = 0;
+  do {
+    combo = randomCombo();
+    key = comboKey(combo);
+    tries++;
+  } while ((historySet.has(key) || otherGenerated.has(key)) && tries < 8000);
+  generatedCombos[boxId] = combo;
+  otherGenerated.add(key);
+
+  const resultDiv = document.getElementById(`resultBalls-${boxId}`);
+  resultDiv.innerHTML = '';
+  combo.forEach(n => {
+    const ball = document.createElement('div');
+    ball.className = 'ball';
+    ball.textContent = n;
+    resultDiv.appendChild(ball);
+  });
+}
+
+function generateAll() {
+  const status = document.getElementById('genStatus');
+  const historySet = new Set(history.map(comboKey));
+  const totalCombos = choose(MAX, PICK);
+
+  if (history.length >= totalCombos) {
+    status.textContent = 'Ya se registraron todas las combinaciones posibles.';
+    status.className = 'status err';
+    return;
+  }
+
+  const generatedThisRound = new Set();
+  for (let i = 1; i <= TOTAL_BOXES; i++) {
+    generateOneCombo(i, historySet, generatedThisRound);
+  }
+
+  status.textContent = 'Se generaron 6 combinaciones, ninguna repite historial ni se repite entre sí.';
+  status.className = 'status ok';
+}
+
+document.getElementById('generateAllBtn').addEventListener('click', generateAll);
+
+function showSaveToast(msg) {
+  const old = document.querySelector('.save-toast');
+  if (old) old.remove();
+  const toast = document.createElement('div');
+  toast.className = 'save-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('saveFab').addEventListener('click', () => {
+  const current = Object.keys(generatedCombos)
+    .sort((a,b) => Number(a) - Number(b))
+    .map(k => generatedCombos[k])
+    .filter(Boolean);
+
+  if (current.length === 0) {
+    showSaveToast('Primero genera combinaciones para poder guardarlas.');
+    return;
+  }
+
+  const lines = [];
+  lines.push('Loto 6/38 - Combinaciones generadas');
+  lines.push(new Date().toLocaleString());
+  lines.push('');
+  current.forEach((combo, i) => {
+    lines.push(`Combinación ${i + 1}: ${combo.join(' - ')}`);
+  });
+  const filename = `loto-6-38-${new Date().toISOString().slice(0,10)}.txt`;
+  downloadTextFile(filename, lines.join('\n'));
+  showSaveToast('Resultados guardados.');
+});
+
+document.getElementById('saveHistoryBtn').addEventListener('click', () => {
+  const status = document.getElementById('saveHistoryStatus');
+
+  if (history.length === 0) {
+    status.textContent = 'Todavía no hay combinaciones en el historial.';
+    status.className = 'status err';
+    return;
+  }
+
+  const lines = [];
+  lines.push('Loto 6/38 - Historial de sorteos');
+  lines.push(new Date().toLocaleString());
+  lines.push(`Total: ${history.length} combinaciones`);
+  lines.push('');
+  history.forEach((combo, i) => {
+    lines.push(`${i + 1}. ${combo.join(' - ')}`);
+  });
+  const filename = `loto-6-38-historial-${new Date().toISOString().slice(0,10)}.txt`;
+  downloadTextFile(filename, lines.join('\n'));
+  status.textContent = 'Historial guardado.';
+  status.className = 'status ok';
+});
+
+loadHistory();
+buildPicker();
+buildGeneratorCards();
+renderHistory();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {
+    // registration not supported in this context; page still works fully without it
+  });
+}
+</script>
+</body>
+</html>
